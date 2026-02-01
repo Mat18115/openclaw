@@ -1,0 +1,29 @@
+{
+  // markdownlint-cli2 configuration (used by VS Code markdownlint extension and CLI)
+  // https://github.com/DavidAnson/markdownlint-cli2
+  "config": {
+    "default": true,
+
+    // Disabled rules
+    "MD013": false, // line-length
+    "MD024": false, // no-duplicate-heading
+    "MD032": false, // blanks-around-lists
+    "MD040": false, // fenced code blocks should have a language specified
+    "MD060": false, // table column style inconsistencies
+
+    // Customized rules
+    "MD007": {
+      "indent": 2
+    }
+  },
+
+  // Ignore generated/vendor folders
+  "ignores": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/out/**"
+  ]
+}
