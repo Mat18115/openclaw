@@ -1,12 +1,19 @@
 {
+  // markdownlint-cli2 configuration (used by VS Code markdownlint extension and CLI)
+  // https://github.com/DavidAnson/markdownlint-cli2
   "globs": ["docs/**/*.md", "docs/**/*.mdx", "README.md"],
   "ignores": ["docs/zh-CN/**", "docs/.i18n/**", "docs/reference/templates/**", "**/.local/**"],
   "config": {
     "default": true,
 
+    "MD007": {
+      "indent": 2
+    },
     "MD013": false,
+    "MD024": false,
     "MD025": false,
     "MD029": false,
+    "MD032": false,
 
     "MD033": {
       "allowed_elements": [
@@ -43,10 +50,11 @@
         "Check",
       ],
     },
-
+    
     "MD036": false,
     "MD040": false,
     "MD041": false,
     "MD046": false,
+    "MD060": false,
   },
 }
