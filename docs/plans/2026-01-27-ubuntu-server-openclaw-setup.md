@@ -1,14 +1,14 @@
 # Ubuntu Server + OpenClaw Setup Plan (Revised)
 
-**Date:** 2026-01-27 (revised 2026-02-01, added AI automation prompts)
+**Date:** 2026-01-27 (revised 2026-02-01, added AI automation prompts; revised 2026-02-04, updated with recent security features)
 **Hardware:** Lenovo ThinkStation P410
 **Target OS:** Ubuntu Server 24.04 LTS
 
 ## Server Details
 
-- **Hostname:** jeff-server
+- **Hostname:** mattias-owl
 - **Admin user:** mattias (sudo access, SSH login)
-- **Bot user:** jeff (non-sudo, runs OpenClaw daemon)
+- **Bot user:** finch (non-sudo, runs OpenClaw daemon)
 - **Local IP:** 192.168.0.141
 - **SSH:** `ssh mattias@192.168.0.141`
 
@@ -24,7 +24,7 @@
 
 - Primary user is mattias (Belgium, Europe/Brussels timezone)
 - Two Windows PCs: "jaguar" (Win11) and "bear" (Win10)
-- Bot will be named "jeff" and run under the jeff user account
+- Bot will be named "finch" and run under the finch user account
 - Using Telegram as the messaging channel (not WhatsApp)
 
 ---
@@ -40,7 +40,7 @@
 │  ├── SSH server (port 22) ← local access                    │
 │  ├── Tailscale ← secure remote access from anywhere         │
 │  ├── Docker ← sandboxed tool execution                      │
-│  └── OpenClaw daemon (as user jeff)                         │
+│  └── OpenClaw daemon (as user finch)                         │
 │       ├── Gateway (localhost:18789)                         │
 │       ├── Tailscale Serve (HTTPS proxy)                     │
 │       ├── Telegram channel                                  │
@@ -110,12 +110,12 @@ This table shows which phases can be automated by Claude Code (before OpenClaw i
 
 ## Phase 1: User Account Restructuring
 
-The server was set up with `jeff` as the admin user. We need to restructure:
+The server was set up with `finch` as the admin user. We need to restructure:
 
 - **mattias** → admin user (sudo access, SSH login, system management)
-- **jeff** → bot user (non-sudo after setup, runs OpenClaw daemon)
+- **finch** → bot user (non-sudo after setup, runs OpenClaw daemon)
 
-### Steps (while logged in as jeff via SSH)
+### Steps (while logged in as finch via SSH)
 
 ```bash
 # 1. Create new admin user
@@ -136,7 +136,7 @@ ssh mattias@192.168.0.141
 sudo passwd mattias
 ```
 
-**Important:** Keep jeff with sudo access temporarily until setup is complete. Remove it in Phase 11.
+**Important:** Keep finch with sudo access temporarily until setup is complete. Remove it in Phase 11.
 
 ### AI Automation (Claude Code)
 
@@ -144,10 +144,10 @@ sudo passwd mattias
 
 **Prompt for Claude Code:**
 
-> I'm logged into an Ubuntu server via SSH as user `jeff` (who currently has sudo access). I need to restructure user accounts:
+> I'm logged into an Ubuntu server via SSH as user `finch` (who currently has sudo access). I need to restructure user accounts:
 >
 > 1. Create a new admin user called `mattias` with sudo privileges
-> 2. Copy SSH authorized_keys from jeff to mattias so I can SSH in as mattias
+> 2. Copy SSH authorized_keys from finch to mattias so I can SSH in as mattias
 > 3. Set appropriate permissions on the .ssh directory
 >
 > Check the current user setup with `whoami`, `groups`, and `ls -la ~/.ssh/`. Verify the authorized_keys file exists before copying.
@@ -286,7 +286,7 @@ In Tailscale admin console → DNS → Enable MagicDNS.
 Then connect with:
 
 ```bash
-ssh mattias@jeff-server
+ssh mattias@mattias-owl
 ```
 
 ### AI Automation (Claude Code)
@@ -337,7 +337,7 @@ ssh mattias@jeff-server
 
 Installing Claude Code allows direct troubleshooting assistance during remaining setup phases.
 
-### Install (as jeff)
+### Install (as finch)
 
 ```bash
 # Via npm (Node.js will be installed in Phase 6)
@@ -357,12 +357,12 @@ claude
 
 ```bash
 # From Windows, SSH in and start Claude Code
-ssh jeff@jeff-server
+ssh finch@mattias-owl
 claude
 
-# Or as mattias, switch to jeff first
-ssh mattias@jeff-server
-sudo -i -u jeff
+# Or as mattias, switch to finch first
+ssh mattias@mattias-owl
+sudo -i -u finch
 claude
 ```
 
@@ -399,8 +399,8 @@ claude
 sudo apt update
 sudo apt install docker.io -y
 
-# Add jeff to docker group (so OpenClaw can manage containers)
-sudo usermod -aG docker jeff
+# Add finch to docker group (so OpenClaw can manage containers)
+sudo usermod -aG docker finch
 
 # Enable Docker to start on boot
 sudo systemctl enable docker
@@ -426,11 +426,11 @@ docker run hello-world
 >
 > 1. Check if Docker is already installed
 > 2. Install Docker from Ubuntu's package repository (docker.io)
-> 3. Add user `jeff` to the docker group so OpenClaw can manage containers without sudo
+> 3. Add user `finch` to the docker group so OpenClaw can manage containers without sudo
 > 4. Enable Docker to start automatically on boot
 > 5. Verify Docker is working by running a test container
 >
-> Important: After adding jeff to the docker group, I'll need to log out and back in for group membership to take effect. Remind me of this.
+> Important: After adding finch to the docker group, I'll need to log out and back in for group membership to take effect. Remind me of this.
 >
 > Reference OpenClaw's Docker documentation at `docs/install/docker.md` and sandboxing docs at `docs/gateway/sandboxing.md` to understand how OpenClaw uses Docker.
 
@@ -438,7 +438,7 @@ docker run hello-world
 
 - Docker installation status: `which docker`, `docker --version`
 - Docker service: `systemctl status docker`
-- User groups: `groups jeff`
+- User groups: `groups finch`
 - OpenClaw Docker requirements: `docs/install/docker.md`
 - Sandboxing architecture: `docs/gateway/sandboxing.md`
 
@@ -459,7 +459,7 @@ docker run hello-world
 
 ## Phase 6: OpenClaw Installation
 
-### Run the installer (as jeff)
+### Run the installer (as finch)
 
 ```bash
 curl -fsSL https://openclaw.bot/install.sh | bash
@@ -501,9 +501,9 @@ echo $XDG_RUNTIME_DIR    # Should show /run/user/$(id -u)
 echo $DBUS_SESSION_BUS_ADDRESS  # Should be set
 
 # Enable lingering and re-login
-sudo loginctl enable-linger jeff
+sudo loginctl enable-linger finch
 exit
-# SSH back in as jeff
+# SSH back in as finch
 ```
 
 ### Manual service creation (if wizard fails)
@@ -550,8 +550,8 @@ openclaw status --deep               # Detailed health check
 > Before installing OpenClaw, I need to verify prerequisites are in place:
 >
 > 1. Check Node.js version (must be v22.12.0 or later)
-> 2. Verify Docker is installed and jeff is in the docker group
-> 3. Check if lingering is enabled for user jeff (required for user systemd services)
+> 2. Verify Docker is installed and finch is in the docker group
+> 3. Check if lingering is enabled for user finch (required for user systemd services)
 > 4. Review the OpenClaw installer documentation at `docs/install/installer.md` to understand what it will do
 >
 > If Node.js isn't installed or is too old, the OpenClaw installer will install it. Check the installer script documentation to understand the installation flow.
@@ -563,7 +563,7 @@ openclaw status --deep               # Detailed health check
 > 1. Check systemd user service status: `systemctl --user status openclaw`
 > 2. View service logs: `journalctl --user -u openclaw -n 50`
 > 3. Verify XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS are set (required for user systemd)
-> 4. Check if lingering is enabled: `loginctl show-user jeff | grep Linger`
+> 4. Check if lingering is enabled: `loginctl show-user finch | grep Linger`
 > 5. Review the troubleshooting section in `docs/gateway/troubleshooting.md`
 >
 > If user systemd services are unavailable, enable lingering and re-login.
@@ -600,7 +600,7 @@ openclaw status --deep               # Detailed health check
 
 ## Phase 7: Sandbox Setup
 
-Build sandbox images (as jeff). The official method uses shell scripts:
+Build sandbox images (as finch). The official method uses shell scripts:
 
 ```bash
 # Clone the repo temporarily to get the scripts
@@ -769,6 +769,24 @@ openclaw security audit --deep
 openclaw security audit --fix   # Auto-apply safe fixes
 ```
 
+### Comprehensive host hardening with healthcheck skill (recommended)
+
+The `healthcheck` skill provides guided host security hardening beyond OpenClaw's config. It can audit OS firewall, SSH, updates, and produce remediation plans with rollback steps:
+
+```bash
+# Invoke via OpenClaw (once running)
+# The skill will walk you through:
+# 1. System context detection (OS, access path, network exposure)
+# 2. OpenClaw security audit
+# 3. Risk tolerance selection
+# 4. Remediation plan with explicit approvals
+# 5. Optional periodic audit scheduling via cron
+```
+
+**When to use:** After initial setup, after any major configuration change, or periodically to verify security posture.
+
+**Reference:** [skills/healthcheck/SKILL.md](../../skills/healthcheck/SKILL.md)
+
 ### Security warnings
 
 1. **Prompt injection is not solved** — treat untrusted content (web results, attachments, emails) as hostile
@@ -807,6 +825,7 @@ openclaw security audit --fix   # Auto-apply safe fixes
 - Session isolation: `docs/concepts/session.md`
 - Logging and redaction: `docs/logging.md`
 - Security policies: `SECURITY.md`
+- Healthcheck skill: `skills/healthcheck/SKILL.md`
 
 ### References
 
@@ -824,10 +843,9 @@ openclaw security audit --fix   # Auto-apply safe fixes
 - [docs/gateway/configuration.md](../gateway/configuration.md) — Complete configuration reference
 - [docs/gateway/configuration-examples.md](../gateway/configuration-examples.md) — Example configurations
 - [docs/gateway/authentication.md](../gateway/authentication.md) — Gateway authentication (tokens, OAuth)
-- [docs/cli/security.md](../cli/security.md) — `openclaw security` command reference
 - [docs/concepts/session.md](../concepts/session.md) — Session management concepts
 - [docs/logging.md](../logging.md) — Logging configuration
-- [SECURITY.md](../../SECURITY.md) — Security policies and vulnerability reporting
+- [skills/healthcheck/SKILL.md](../../skills/healthcheck/SKILL.md) — Healthcheck skill for host hardening
 
 ---
 
@@ -961,7 +979,7 @@ sudo tailscale serve --bg https / http://127.0.0.1:18789
 ### Access from anywhere on your tailnet
 
 ```
-https://jeff-server.<tailnet-name>.ts.net/
+https://mattias-owl.<tailnet-name>.ts.net/
 ```
 
 ### DNS Security (recommended)
@@ -1034,29 +1052,50 @@ This provides egress filtering at the DNS layer without needing OpenSnitch.
 
 ## Phase 11: Finalization
 
-### Remove sudo from jeff
+### Remove sudo from finch
 
 ```bash
 # As mattias
-sudo deluser jeff sudo
+sudo deluser finch sudo
 ```
 
-### Optionally lock jeff's password
+### Optionally lock finch's password
 
 ```bash
-sudo passwd -l jeff    # Lock: no password login possible
-# sudo passwd -u jeff  # Unlock later if needed
+sudo passwd -l finch    # Lock: no password login possible
+# sudo passwd -u finch  # Unlock later if needed
 ```
 
-The bot doesn't need a password during operation — the systemd service runs under jeff's user context automatically.
+The bot doesn't need a password during operation — the systemd service runs under finch's user context automatically.
 
 ### Verify everything works
 
 ```bash
 # As mattias
-sudo -u jeff openclaw status --deep
-sudo -u jeff systemctl --user status openclaw
+sudo -u finch openclaw status --deep
+sudo -u finch systemctl --user status openclaw
 ```
+
+### Schedule periodic security audits (recommended)
+
+Use the cron system to schedule weekly security audits:
+
+```bash
+# As finch
+openclaw cron add --name "healthcheck:security-audit" \
+  --schedule "0 4 * * 0" \
+  --prompt "Run openclaw security audit --deep and summarize any findings"
+
+# Optional: schedule weekly update status check
+openclaw cron add --name "healthcheck:update-status" \
+  --schedule "0 5 * * 0" \
+  --prompt "Run openclaw update status and report if updates are available"
+
+# Verify cron jobs
+openclaw cron list
+```
+
+**Note:** One-shot cron jobs auto-delete after success by default (as of 2026.2.3). Use `--keep-after-run` if you want to preserve them.
 
 ### Go headless
 
@@ -1070,10 +1109,10 @@ Unplug monitor and keyboard. Server is now fully headless.
 
 > I need to finalize the OpenClaw server setup by removing unnecessary privileges. Please:
 >
-> 1. Verify OpenClaw is running correctly: `sudo -u jeff openclaw status --deep`
-> 2. Remove sudo access from jeff user: `sudo deluser jeff sudo`
-> 3. Optionally lock jeff's password (the daemon doesn't need one)
-> 4. Run a final security audit: `sudo -u jeff openclaw security audit --deep`
+> 1. Verify OpenClaw is running correctly: `sudo -u finch openclaw status --deep`
+> 2. Remove sudo access from finch user: `sudo deluser finch sudo`
+> 3. Optionally lock finch's password (the daemon doesn't need one)
+> 4. Run a final security audit: `sudo -u finch openclaw security audit --deep`
 > 5. Verify the systemd service is still running correctly after privilege changes
 > 6. Confirm I can still SSH in as mattias and access OpenClaw via Tailscale
 >
@@ -1139,7 +1178,7 @@ Unplug monitor and keyboard. Server is now fully headless.
 - [ ] Authorize in Tailscale admin console
 - [ ] Install Tailscale on Windows PCs (jaguar, bear)
 - [ ] Enable MagicDNS in admin console
-- [ ] Test: `ssh jeff@jeff-server` from tailnet
+- [ ] Test: `ssh finch@mattias-owl` from tailnet
 
 ### Phase 4: Claude Code
 
@@ -1149,7 +1188,7 @@ Unplug monitor and keyboard. Server is now fully headless.
 ### Phase 5: Docker Setup
 
 - [ ] Install Docker
-- [ ] Add jeff to docker group
+- [ ] Add finch to docker group
 - [ ] Enable Docker on boot
 - [ ] Log out/in for group membership
 - [ ] Verify with `docker run hello-world`
@@ -1160,7 +1199,7 @@ Unplug monitor and keyboard. Server is now fully headless.
 - [ ] Verify Node.js version: `node --version` (must be v22.12.0+)
 - [ ] Configure npm security: `npm config set ignore-scripts true`
 - [ ] Complete onboarding wizard
-- [ ] Enable lingering: `sudo loginctl enable-linger jeff`
+- [ ] Enable lingering: `sudo loginctl enable-linger finch`
 - [ ] Verify service: `systemctl --user status openclaw`
 
 ### Phase 7: Sandbox Setup
@@ -1177,6 +1216,7 @@ Unplug monitor and keyboard. Server is now fully headless.
 - [ ] Create ~/.openclaw/.env with secrets
 - [ ] Apply secure config
 - [ ] Run: `openclaw security audit --deep --fix`
+- [ ] Run healthcheck skill for host hardening guidance (optional, recommended)
 
 ### Phase 9: Telegram Channel Setup
 
@@ -1190,14 +1230,16 @@ Unplug monitor and keyboard. Server is now fully headless.
 
 - [ ] Update config with `tailscale: { mode: "serve" }`
 - [ ] Restart gateway: `systemctl --user restart openclaw`
-- [ ] Test HTTPS access: `https://jeff-server.<tailnet>.ts.net/`
+- [ ] Test HTTPS access: `https://mattias-owl.<tailnet>.ts.net/`
 - [ ] Configure NextDNS in Tailscale admin (DNS security)
 
 ### Phase 11: Finalization
 
-- [ ] Remove sudo from jeff: `sudo deluser jeff sudo`
-- [ ] Optionally lock jeff password
+- [ ] Remove sudo from finch: `sudo deluser finch sudo`
+- [ ] Optionally lock finch password
 - [ ] Verify everything works
+- [ ] Schedule periodic security audits via cron (recommended)
+- [ ] Run healthcheck skill for comprehensive host audit
 - [ ] Unplug monitor/keyboard
 
 ---
@@ -1211,10 +1253,10 @@ Unplug monitor and keyboard. Server is now fully headless.
 ssh mattias@192.168.0.141
 
 # From anywhere (Tailscale) as admin
-ssh mattias@jeff-server
+ssh mattias@mattias-owl
 
 # Switch to bot user
-sudo -i -u jeff
+sudo -i -u finch
 ```
 
 ### OpenClaw Management
@@ -1284,7 +1326,7 @@ cat /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 | Disk full | `df -h`, `sudo apt autoremove` |
 | After power outage | Server auto-boots, services auto-start |
 | Systemd user services unavailable | Enable lingering, re-login |
-| Docker permission denied | Verify jeff in docker group, re-login |
+| Docker permission denied | Verify finch in docker group, re-login |
 | Sandbox permission errors | `chown -R 1000:1000 ~/.openclaw/agents/` |
 | Telegram bot stops responding | IPv6 issue: check `dig +short api.telegram.org AAAA`, force IPv4 if needed |
 | Config validation fails | Run `openclaw doctor --fix` to diagnose and repair |
@@ -1327,6 +1369,16 @@ cat /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 
 9. **NPM security:** Run `npm config set ignore-scripts true` to disable lifecycle scripts (primary supply chain attack vector).
 
+10. **TLS 1.3 minimum:** Gateway now requires TLS 1.3 minimum for TLS listeners (as of 2026.2.1). Tailscale Serve handles this automatically.
+
+11. **Healthcheck skill:** Use `healthcheck` skill after any major configuration change for comprehensive host + OpenClaw security audit with guided remediation.
+
+12. **Telegram stability:** Recent fixes (2026.2.2+) improved grammY long-poll timeout recovery and added download timeouts. If your bot stops responding, check logs for timeout errors and ensure you're on the latest version.
+
+13. **Channel metadata isolation:** Untrusted channel metadata (usernames, message IDs from Slack/Discord) is now kept out of system prompts to reduce prompt injection surface (as of 2026.2.3).
+
+14. **Cron job defaults:** Isolated cron jobs now default to "announce" delivery mode. One-shot jobs auto-delete after success.
+
 ### References
 
 **Official Documentation:**
@@ -1343,6 +1395,8 @@ cat /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 - [docs/channels/telegram.md](../channels/telegram.md) — Telegram channel documentation
 - [docs/gateway/sandboxing.md](../gateway/sandboxing.md) — Sandboxing documentation
 - [docs/install/bun.md](../install/bun.md) — Bun runtime notes (and why not to use it with Telegram)
+- [skills/healthcheck/SKILL.md](../../skills/healthcheck/SKILL.md) — Healthcheck skill for host hardening
+- [docs/cli/cron.md](../cli/cron.md) — `openclaw cron` command reference
 
 ---
 
